@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🚦 California DMV Practice Test Simulator</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --accent:#38bdf8; --accent2:#fbbf24;
+    --good:#22c55e; --bad:#ef4444; --text:#e2e8f0; --muted:#94a3b8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(135deg,#0f172a,#1e3a5f); color:var(--text);
+    min-height:100vh; display:flex; justify-content:center; padding:20px;
+  }
+  .app{ width:100%; max-width:640px; }
+  h1{ text-align:center; font-size:1.5rem; margin-bottom:4px;}
+  .sub{ text-align:center; color:var(--muted); margin-bottom:24px; font-size:0.9rem;}
+  .card{
+    background:var(--card); border-radius:16px; padding:24px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4); margin-bottom:16px;
+  }
+  .choice-grid{ display:flex; flex-direction:column; gap:14px; margin-top:8px;}
+  .mode-btn{
+    display:flex; align-items:center; gap:14px; padding:20px; border-radius:14px;
+    border:2px solid #334155; background:#0f1b2e; color:var(--text);
+    font-size:1.1rem; cursor:pointer; transition:all .15s; text-align:left;
+  }
+  .mode-btn:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .mode-btn .emoji{ font-size:1.8rem; }
+  .section-title{ font-weight:700; margin:18px 0 8px; color:var(--accent2); font-size:0.95rem;}
+  .set-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:6px;}
+  .set-btn{
+    padding:14px 6px; border-radius:10px; border:2px solid #334155; background:#0f1b2e;
+    color:var(--text); cursor:pointer; font-weight:700; text-align:center; font-size:0.95rem;
+  }
+  .set-btn:hover{ border-color:var(--accent); }
+  .set-btn small{ display:block; font-weight:400; color:var(--muted); font-size:0.7rem; margin-top:2px;}
+  .progress-wrap{ background:#0f1b2e; border-radius:8px; height:10px; overflow:hidden; margin-bottom:18px;}
+  .progress-bar{ height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .25s; }
+  .qnum{ color:var(--muted); font-size:0.85rem; margin-bottom:6px; }
+  .question{ font-size:1.15rem; font-weight:600; margin-bottom:18px; line-height:1.4;}
+  .option{
+    display:block; width:100%; text-align:left; padding:14px 16px; margin-bottom:10px;
+    border-radius:10px; border:2px solid #334155; background:#0f1b2e; color:var(--text);
+    font-size:1rem; cursor:pointer; transition:all .12s;
+  }
+  .option:hover{ border-color:var(--accent); }
+  .option.selected{ border-color:var(--accent); background:#13283f; }
+  .option.correct{ border-color:var(--good); background:#0f2e1f; }
+  .option.incorrect{ border-color:var(--bad); background:#2e1313; }
+  .nav-row{ display:flex; justify-content:space-between; margin-top:20px; gap:10px; }
+  button.primary{
+    background:linear-gradient(135deg,var(--accent),#0ea5e9); color:#04212f; border:none;
+    padding:13px 22px; border-radius:10px; font-weight:700; font-size:1rem; cursor:pointer;
+  }
+  button.primary:disabled{ opacity:0.4; cursor:not-allowed; }
+  button.secondary{
+    background:transparent; color:var(--muted); border:2px solid #334155;
+    padding:13px 22px; border-radius:10px; font-weight:600; cursor:pointer;
+  }
+  .result-icon{ text-align:center; font-size:4rem; margin-bottom:6px;}
+  .result-title{ text-align:center; font-size:1.6rem; font-weight:800; margin-bottom:4px;}
+  .result-sub{ text-align:center; color:var(--muted); margin-bottom:20px;}
+  .pass{ color:var(--good); }
+  .fail{ color:var(--bad); }
+  .score-box{ text-align:center; font-size:2.4rem; font-weight:900; margin:10px 0 24px; }
+  .review{ border-top:1px solid #334155; padding-top:14px; margin-top:6px; font-size:0.9rem; }
+  .review-item{ padding:10px 0; border-bottom:1px solid #1f2c40; }
+  .review-item .qtext{ font-weight:600; margin-bottom:4px; }
+  .tag-correct{ color:var(--good); }
+  .tag-wrong{ color:var(--bad); }
+  .hidden{ display:none; }
+  .badge{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.75rem;
+    background:#13283f; color:var(--accent); margin-bottom:14px;
+  }
+  .back-link{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.85rem; margin-bottom:10px; padding:0;}
+  .back-link:hover{ color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🚦 California DMV Practice Test Simulator</h1>
+  <div class="sub">Practice questions based on the California DMV Driver Handbook. Not an official DMV product; always confirm current rules at dmv.ca.gov. 📘</div>
+
+  <!-- STEP 1: TYPE SELECT -->
+  <div id="screen-type" class="card">
+    <div class="choice-grid">
+      <button class="mode-btn" onclick="chooseType('car')">
+        <span class="emoji">🚗</span>
+        <div>
+          <div style="font-weight:700;">Car / Standard License Test</div>
+          <div style="color:var(--muted); font-size:0.85rem;">100-question bank · pass at 80%</div>
+        </div>
+      </button>
+      <button class="mode-btn" onclick="chooseType('moto')">
+        <span class="emoji">🏍️</span>
+        <div>
+          <div style="font-weight:700;">Motorcycle License Test</div>
+          <div style="color:var(--muted); font-size:0.85rem;">100-question bank · pass at 80%</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: RANDOM vs SEQUENTIAL -->
+  <div id="screen-format" class="card hidden">
+    <button class="back-link" onclick="show('screen-type')">⬅️ Back</button>
+    <div class="badge" id="formatBadge"></div>
+    <div class="choice-grid">
+      <button class="mode-btn" onclick="startRandom()">
+        <span class="emoji">🎲</span>
+        <div>
+          <div style="font-weight:700;">Random Practice Test</div>
+          <div style="color:var(--muted); font-size:0.85rem;">20 random questions from the full bank, shuffled every time</div>
+        </div>
+      </button>
+      <button class="mode-btn" onclick="showSets()">
+        <span class="emoji">📑</span>
+        <div>
+          <div style="font-weight:700;">Sequential Test Sets</div>
+          <div style="color:var(--muted); font-size:0.85rem;">Fixed sets of 20, always in the same order , good for tracking progress</div>
+        </div>
+      </button>
+    </div>
+    <div id="setPicker" class="hidden">
+      <div class="section-title">📑 Choose a set</div>
+      <div class="set-grid" id="setGrid"></div>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="screen-quiz" class="card hidden">
+    <div class="badge" id="modeBadge"></div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="qnum" id="qnum"></div>
+    <div class="question" id="qtext"></div>
+    <div id="options"></div>
+    <div class="nav-row" id="nav-normal">
+      <button class="secondary" id="quitBtn" onclick="showQuitConfirm()">⬅️ Quit</button>
+      <button class="primary" id="nextBtn" disabled onclick="nextQuestion()">Next ➡️</button>
+    </div>
+    <div class="nav-row hidden" id="nav-confirm" style="background:#1a1a2e;border-radius:10px;padding:14px;flex-direction:column;gap:10px;align-items:center;">
+      <div style="font-size:0.95rem;color:var(--text);">⚠️ Quit and lose your progress?</div>
+      <div style="display:flex;gap:10px;">
+        <button class="secondary" onclick="hideQuitConfirm()">Keep Going</button>
+        <button class="primary" onclick="confirmQuit()">Yes, Quit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="screen-result" class="card hidden">
+    <div class="result-icon" id="resultIcon"></div>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <div class="score-box" id="scoreBox"></div>
+    <div style="display:flex; gap:10px; justify-content:center; margin-bottom:6px;">
+      <button class="primary" onclick="retakeSame()">🔁 Retake</button>
+      <button class="secondary" onclick="goHome()">🏠 Choose Test</button>
+    </div>
+    <div class="review" id="reviewList"></div>
+  </div>
+</div>
+
+<script>
+// ---------- QUESTION BANKS (California-specific) ----------
+const carBank = [
+["In California, a solid yellow line on your side of the center with a broken yellow line on the other side means:","You may pass when safe, since one line is broken","You may not pass, though oncoming traffic may pass when safe","Either direction may pass when clear","Passing is allowed only to enter a driveway",1],
+["California law requires you to signal continuously for at least how many feet before turning?","25 feet","100 feet","200 feet","300 feet",1],
+["California's implied consent law means that by driving, you have agreed to:","Submit to a chemical test if lawfully arrested for DUI, with penalties for refusing","Allow any officer to search your car on request","Waive your right to a hearing on any citation","Carry a breathalyzer in your vehicle at all times",0],
+["Under California's zero tolerance law, a driver under 21 can be cited for driving with a BAC of:","0.08% or higher, same as an adult","0.05% or higher","0.01% or higher","Any level, since 0.00% is the only legal limit",2],
+["In California, when must you dim your headlights for an oncoming vehicle?","Within 100 feet","Within 300 feet","Within 500 feet","Within 1,000 feet",2],
+["In California, when following another vehicle at night, you must dim your high beams within:","100 feet","300 feet","500 feet","There is no following distance requirement for high beams",1],
+["California allows a right turn on red:","Never, under any circumstance","After a complete stop and yielding, unless a sign prohibits it","Without stopping if no cross traffic is visible","Only between 6 a.m. and 6 p.m.",1],
+["On a California freeway, if you miss your exit you should:","Back up carefully along the shoulder","Stop and wait for a gap to reverse","Continue to the next exit","Cross the median if no barrier is present",2],
+["California requires you to move over or slow down for a stopped emergency vehicle with lights flashing under the state's Move Over law. This applies to:","Only marked CHP vehicles","Police, fire, ambulance, and certain tow or maintenance vehicles with flashing lights","Only vehicles on the right shoulder","Only vehicles stopped for more than 10 minutes",1],
+["Lane splitting (riding a motorcycle between lanes of stopped or slow traffic) in California is:","Illegal everywhere in the state","Legal, and the CHP has published safety guidelines for doing it reasonably","Legal only on freeways with 3 or more lanes","Legal only for motorcycles under 500cc",1],
+["California's seat belt law requires:","Only the driver to wear a seat belt","All occupants in the vehicle to wear a seat belt, front and rear seats","Only occupants in the front seat","Only children under age 8",1],
+["California law requires children under age 8 to be secured in a:","Standard adult seat belt only","Car seat or booster seat appropriate for their height and weight, generally in the back seat","Booster seat, regardless of size","Car seat only if riding in the front seat",1],
+["On a California road with no center line and no signs, two vehicles meet at an uncontrolled intersection at the same time. Who has the right of way?","The vehicle traveling faster","The vehicle on the right","The vehicle that honks first","The larger vehicle",1],
+["California's Basic Speed Law states that you may never drive:","Faster than the posted speed limit under any condition","At a speed greater than is safe for current conditions, even if that's below the posted limit","Slower than 5 mph under the posted limit","At night above 45 mph regardless of the posted limit",1],
+["In California, the maximum speed limit on most freeways, unless otherwise posted, is:","55 mph","65 mph","70 mph","75 mph",2],
+["California law regarding school buses requires you to stop when a bus has flashing red lights activated:","Only if you are directly behind the bus","In both directions on an undivided road, but not required across a physical median divider on a divided highway","Only if children are visible outside the bus","Only if the bus is stopped for more than one minute",1],
+["In California, when passing a bicyclist, state law generally requires:","No specific clearance, just care","At least 3 feet of clearance, or safe clearance at a reduced speed if 3 feet isn't possible","1 foot of clearance","Waiting until no other traffic is present",1],
+["California's DUI law sets the standard illegal BAC for drivers 21 and older at:","0.05%","0.08%","0.10%","0.04%, except for commercial drivers",1],
+["For a commercial driver in California, the illegal BAC threshold is:","Same as a standard driver, 0.08%","0.04%","0.05%","0.02%",1],
+["A California driver merging onto a freeway from an on-ramp should:","Stop at the end of the ramp until traffic clears completely","Accelerate to near the speed of freeway traffic and merge into a gap when safe","Enter at a fixed 25 mph regardless of traffic speed","Wait for freeway traffic to yield before merging",1],
+["In California, HOV (carpool) lanes are generally reserved for vehicles with a minimum number of occupants, though certain clean air vehicles with a special decal may also qualify. The typical minimum occupancy is:","1 occupant","2 occupants (unless otherwise posted)","3 occupants everywhere in the state","4 occupants",1],
+["California requires new drivers under 18 to complete a Graduated Driver License (GDL) program. During the provisional period, a driver under 18 generally may not drive between:","6 p.m. and 6 a.m., unless accompanied by a licensed adult 25 or older, or for specific exceptions like work or school","10 p.m. and 6 a.m., unless accompanied by a licensed adult 25 or older, or for specific exceptions","Midnight and 5 a.m. only","There is no nighttime restriction under California's GDL",1],
+["Under California's provisional license restrictions, a driver under 18 generally may not transport passengers under 20 without a licensed adult 25 or older for the first:","3 months after licensing","6 months after licensing","12 months after licensing","There is no passenger restriction under California law",2],
+["In California, a flashing red traffic signal should be treated the same as a:","Yield sign","Stop sign","Yellow light","Do Not Enter sign",1],
+["In California, a flashing yellow traffic signal means you should:","Come to a complete stop, then proceed","Slow down and proceed with caution","Treat it exactly like a red light","Stop only if pedestrians are visible",1],
+["California's rule for parking on a hill facing downhill with a curb is to turn your front wheels:","Away from the curb, so the car would roll into the street if it moved","Toward the curb, so the car would roll into the curb if it moved","Straight ahead, regardless of the curb","It doesn't matter as long as the parking brake is engaged",1],
+["California's rule for parking on a hill facing uphill with a curb is to turn your front wheels:","Toward the curb","Away from the curb, so the car would roll away from the curb if it moved","Straight ahead","Fully to the left regardless of the curb",1],
+["In California, when parking facing downhill with no curb, you should turn your front wheels:","Toward the center of the road","Toward the right edge or shoulder of the road","Straight ahead only","Toward oncoming traffic",1],
+["California law states that when two vehicles arrive at a four way stop at the same time from perpendicular directions, the right of way goes to:","The vehicle on the left","The vehicle on the right","Whichever vehicle is going straight","The vehicle that arrived a split second earlier, regardless of position",1],
+["In California, when you are turning left at an intersection with a steady green circular signal (not an arrow) and a vehicle is approaching from the opposite direction, you must:","Proceed since you have a green light","Yield to the oncoming vehicle before completing your turn","Only yield if the oncoming vehicle is a commercial truck","Proceed only if you signaled first",1],
+["California prohibits use of a handheld cell phone while driving, but allows:","No phone use of any kind while driving","Hands-free use, such as speakerphone or a mounted device operated by voice or a single tap or swipe","Texting while stopped at a red light","Handheld use only in a hands-free-designated lane",1],
+["Under California law, drivers under 18 are prohibited from using a cell phone while driving:","In any manner, handheld or hands-free, with limited exceptions like emergencies","Only for handheld calls; hands-free is allowed","Only while on the freeway","Only after 10 p.m.",0],
+["In California, an intersection where the traffic light is completely dark (a power outage) should be treated as:","A yield sign, since the main road has priority","A four-way stop, following standard right-of-way rules","A closed intersection until repaired","A situation where the more heavily traveled road always has priority",1],
+["California requires drivers to carry proof of financial responsibility, meaning:","Only proof of vehicle registration is required","Proof of insurance or another approved form of financial responsibility must be shown if requested by an officer","Proof of insurance is optional if the car is paid off","Only commercial vehicles need proof of insurance",1],
+["In California, if your vehicle's headlights are required to be on, this includes conditions like:","Only between sunset and sunrise","From sunset to sunrise, and any time windshield wipers are in use due to weather, or visibility is less than 1,000 feet","Only during posted fog conditions","Only when driving above 45 mph at night",1],
+["In California, a solid white line along the right edge of the roadway is generally used to:","Mark a bike lane exclusively","Mark the edge of the legally usable travel lane (the fog line)","Indicate a passing zone","Indicate a carpool lane",1],
+["California's Basic Speed Law and related rules mean that driving exactly at the posted speed limit:","Is always considered safe regardless of conditions","May still be a violation if conditions such as rain, fog, or heavy traffic make that speed unsafe","Guarantees you cannot receive a speeding citation","Only applies on freeways",1],
+["In California, when emerging from an alley, private road, or driveway onto a public street, you must:","Proceed if no other vehicles are visible","Stop, or at least come nearly to a stop, and yield to pedestrians and cross traffic before entering","Yield only to vehicles already on the street, not pedestrians","Sound your horn before entering, then proceed",1],
+["California allows U-turns at intersections unless prohibited by a sign, and also generally allows U-turns:","Anywhere on any residential street, with no restriction","On a two-way street when you have a clear view for a safe distance and no sign prohibits it, but not in business districts unless controlled by signal and no sign prohibits it","Never outside of a signalized intersection","Only on divided highways",1],
+["California law regarding passing on a two-lane highway with a solid yellow line on your side prohibits passing because:","The road is legally one-way","Sight distance or other hazards make it unsafe to pass in that zone","Trucks are present in the oncoming lane","The posted speed limit is below 45 mph",1],
+["Under California law, a driver who fails to yield to a pedestrian in a crosswalk (marked or unmarked at an intersection) is:","Only in violation if the crosswalk is marked with paint","In violation, since pedestrians generally have the right of way in both marked and unmarked crosswalks at intersections","Only in violation if a crossing guard is present","Not in violation unless the pedestrian is a child",1],
+["In California, driving in the far left lane of a multi-lane freeway below the speed of surrounding traffic when it's not necessary to pass is:","Always fully legal with no restriction","Discouraged and can be cited under laws requiring slower traffic to keep right","Required if you're driving exactly the speed limit","Only restricted during rush hour",1],
+["California requires you to signal a lane change or turn using your turn signal for a minimum distance of:","50 feet before the turn or change","100 feet before the turn or change","150 feet before the turn or change","No specific distance is required, only that you signal",1],
+["California defines reckless driving as driving with:","Any speed above the posted limit","Willful or wanton disregard for the safety of persons or property","A single moving violation on your record","Driving without a valid registration",1],
+["Under California's Basic Speed Law, the maximum speed you may travel in a business or residential district unless otherwise posted is generally:","15 mph","25 mph","35 mph","45 mph",1],
+["In California, the speed limit near a school when children are present and it is posted is typically:","15 mph","25 mph","35 mph","45 mph",1],
+["California's DUI laws apply not only to alcohol but also to:","Prescription and over-the-counter medications, and illegal drugs, if they impair your ability to drive safely","Only illegal drugs, not prescription medications","Only substances specifically named on a state list","Marijuana only, since alcohol is covered separately",0],
+["In California, if you are involved in a collision that results in injury, death, or property damage over a set amount, you are required to:","Only exchange information if the other driver asks","Stop, exchange information, render aid if needed, and report the collision to the DMV within 10 days if the criteria are met","Wait for police before doing anything, even exchanging information","Leave a note only if no one is present at the scene",1],
+["California allows drivers to pass on the right when:","Never, under any circumstance","The road has multiple lanes in your direction and it can be done safely, such as passing a vehicle signaling a left turn","Only on one-way streets","Only when the vehicle ahead has completely stopped",1],
+["California's law on following distance generally recommends the 3 second rule, and California vehicle code specifically restricts following a vehicle at a distance that is not:","Legally defined by seconds, only judged as 'reasonable and prudent' based on speed and conditions","Restricted at all, since spacing is a matter of personal judgment","Applicable to trucks and buses","Applicable in construction zones",0],
+["In California, a driver approaching a stopped school bus with flashing red lights on a two-way undivided road must:","Only stop if traveling in the same direction as the bus","Stop from both directions until the lights stop flashing and the bus resumes motion","Slow down but need not stop if no children are visible","Only stop if the bus is on the right side of the road",1],
+["California vehicle code generally requires a minimum tread depth for tires, and driving on tires below the legal minimum is:","Allowed if the vehicle passes a visual inspection","A violation, since worn tires below the legal tread depth reduce safe traction and are subject to citation","Only a violation for commercial vehicles","Only enforced during a scheduled smog check",1],
+["In California, texting while driving, including reading, sending, or composing a text, is:","Legal if done at a red light","Illegal while operating a vehicle, even when temporarily stopped at a light or in traffic, with only very limited exceptions","Only illegal on freeways","Illegal only for drivers under 21",1],
+["California requires a driver to yield to a vehicle already in a roundabout. Entering traffic must:","Proceed if signaling","Yield to traffic already circulating in the roundabout and enter when there's a safe gap","Come to a complete stop before entering, regardless of traffic","Always enter from the left side of the roundabout",1],
+["In California, if your brakes fail while driving, an appropriate response is to:","Turn off the engine at speed immediately","Pump the brake pedal, downshift, and apply the parking brake gradually while steering to a safe stop","Shift into park while moving to lock the wheels","Exit the vehicle while still rolling",1],
+["California considers a vehicle's tire chains or traction devices to be required when:","Only when the driver personally judges conditions unsafe","Signs indicate chain control is in effect in a designated area, typically in snow conditions","Only on vehicles over 10,000 pounds","Never, since California doesn't experience snow conditions on state highways",1],
+["California requires drivers to carry a valid driver's license and to display it to a peace officer:","Only if requested during a traffic stop or when involved in a collision","Only if pulled over for a moving violation","Only for commercial drivers","Only if requested by another driver involved in a crash",0],
+["California law regarding open containers of alcohol states that:","Passengers may have an open container as long as the driver does not drink","No open container of alcohol is allowed in the passenger area of a vehicle on a public road, for either driver or passengers, with limited exceptions like the trunk or a limo/RV living area","Open containers are allowed if the vehicle is parked with the engine off","Open containers are allowed for passengers in the back seat only",1],
+["Under California law, if a peace officer signals you to pull over, you must:","Only comply if you believe you've committed a violation","Safely pull over as soon as possible in a location out of the flow of traffic","Continue to the nearest well lit area regardless of distance, without any obligation to signal or slow down","Only comply during daylight hours",1],
+["California's rule on express or diamond (carpool) lane access for a vehicle with a valid Clean Air Vehicle decal is:","The decal has no effect on carpool lane access","The decal may allow solo use of the carpool lane even without meeting the occupancy requirement, subject to state rules","The decal only works during off peak hours","The decal is required for all electric vehicles regardless of lane use",1],
+["California requires that when following a motorcycle, you should treat the following distance:","The same as any other vehicle, using the 3 second rule or more, never trying to share a lane with the motorcycle","With less clearance, since motorcycles are smaller","With no specific consideration different from a bicycle","Only relevant if the motorcycle is lane splitting",0],
+["In California, driving with a suspended or revoked license is:","A minor infraction similar to an expired registration","A serious violation that can result in fines, vehicle impoundment, or jail time depending on the circumstances","Only a violation if caught speeding while suspended","Not enforced unless involved in a collision",1],
+["California's move over law for a stopped vehicle displaying hazard lights on the shoulder, in addition to emergency vehicles, generally advises drivers to:","Ignore the vehicle unless it's a marked emergency vehicle","Move over a lane if possible, or slow down and proceed with caution","Always stop completely on the freeway shoulder to check on the vehicle","Only slow down if the vehicle has been there over 30 minutes",1],
+["In California, at an intersection controlled by a stop sign in all directions, if you and another vehicle arrive at slightly different times, right of way generally goes to:","Whichever vehicle stopped first","The vehicle on the right if arrival is simultaneous","Whichever vehicle is turning left","The larger or heavier vehicle",0],
+["California considers it illegal to drive a vehicle with a windshield that is:","Tinted at the very top edge above the manufacturer's shade band","Cracked or obstructed in a way that significantly impairs the driver's view, such as extensive cracking in the driver's direct line of sight","Equipped with a dash cam mounted in a legal position","Equipped with wipers rated for heavy rain",1],
+["California driver's license holders are required to notify the DMV of a change of address within:","10 days","30 days","60 days","90 days",1],
+["In California, the standard behind-the-wheel provisional license restriction for a newly licensed teen includes limits on both nighttime driving and passengers, and these restrictions generally last until the driver turns:","16","17","18","21",2],
+["California law states that when a traffic signal shows a green arrow along with a red circular light, you may:","Only proceed straight through, not in the arrow's direction","Proceed only in the direction indicated by the green arrow","Proceed in any direction since green is showing","Wait for the red light to change before moving",1],
+["In California, driving slower than the flow of traffic in a manner that impedes normal movement can result in a citation, unless:","The driver is following all posted speed limits exactly","Reduced speed is necessary for safe operation due to a grade, weather, mechanical issue, or compliance with law","The driver is in the rightmost lane, regardless of speed","The driver has activated their hazard lights",1],
+["A California driver approaching a railroad crossing with flashing red lights and a lowered gate must:","Wait until the lights stop flashing and the gate rises before crossing, never driving around a lowered gate","Cross if no train is visible","Proceed if waiting more than 60 seconds","Drive around the gate carefully at low speed",0],
+["California requires vehicles to stop for a pedestrian who is blind or has low vision and is using a white cane or a guide dog:","Only if the pedestrian is in a marked crosswalk","At any location where the pedestrian is crossing or about to cross, since failing to yield to them is a specific violation","Only during daylight hours","Only if a crossing guard directs traffic",1],
+["California's rule for a center two-way left-turn lane, marked with yellow lines on both sides, permits its use:","As a passing lane for through traffic in either direction","By vehicles from either direction, but only to execute a left turn or to enter/exit a driveway, not as a through travel lane","Exclusively by emergency vehicles","Only by vehicles turning right",1],
+["In California, if you are being passed by another vehicle, you should:","Speed up to prevent being passed","Maintain or slightly reduce your speed to help the pass complete safely","Move toward the center line to hold your position","Flash your headlights to warn the passing driver",1],
+["California vehicle code addresses distracted driving broadly, and using an electronic wireless device while driving to write, send, or read a text-based message is:","Legal if done briefly at a stoplight","Prohibited, with narrow exceptions such as a single tap or swipe to activate hands-free mode","Legal for drivers over 18","Legal if the vehicle is equipped with a hands-free system, regardless of how the device is used",1],
+["California requires drivers to yield the right of way to a vehicle already established in a traffic circle or roundabout, and also requires that when exiting the roundabout, you:","Signal your exit and check for other vehicles, including bicycles and pedestrians, before leaving the circle","May exit without signaling since you're leaving the flow of traffic","Come to a full stop before exiting","Are not required to signal at any point in a roundabout",0],
+["In California, tailgating (following too closely) is defined in terms of leaving a following distance that is:","Exactly 3 car lengths at any speed","Reasonable and prudent, considering the speed of traffic, road conditions, and traffic on the road","Always at least 500 feet on a freeway","A fixed number of seconds specified by the vehicle code for every road type",1],
+["California DMV guidance states that if your accelerator sticks while driving, you should:","Pump the accelerator to try to free it","Shift to neutral, brake firmly and steadily, steer to a safe stop, then turn off the engine","Turn off the engine immediately while still at speed","Press the brake and accelerator together",1],
+["California requires drivers to use their headlights when windshield wipers are in continuous use due to weather. This rule exists mainly because:","It helps the wipers clear the windshield faster","It makes your vehicle more visible to others in reduced visibility conditions like rain or fog","It's required only for vehicles without daytime running lights","It improves fuel economy in wet weather",1],
+["In California, if you're involved in a crash that only involves minor vehicle damage and no injuries, you are still required to:","Do nothing further if both drivers agree it's minor","Exchange information with the other driver, and report to the DMV within 10 days if property damage exceeds the state's reporting threshold","Report immediately to the CHP by phone before leaving the scene","Only exchange information if a passenger requests it",1],
+["A driver in California who consistently exceeds the posted speed limit and is also observed weaving through traffic and following closely may be cited for:","A minor equipment violation only","Reckless driving, given the combination of dangerous behaviors","A parking violation","Failure to signal, since that's the primary offense",1],
+["In California, when driving near a large truck, you should be aware that the truck's blind spots, sometimes called no-zones, exist:","Only directly behind the truck","On both sides, close behind, and in front of the truck, where the driver has limited or no visibility of nearby vehicles","Only on the truck's right side","Only when the truck is turning",1],
+["California defines a school zone speed limit as generally applying:","At all times near any school, regardless of whether children are present","When children are present, such as during arrival and dismissal times, and where posted","Only during the summer months","Only on the block directly in front of the school entrance",1],
+["California allows motorcyclists to ride two abreast within a single lane in certain circumstances, but generally motorcycles are entitled to:","Share a full lane width with any other vehicle at any time","Full use of a lane, meaning other vehicles should not drive alongside a motorcycle within the same lane","Only half a lane width regardless of traffic","No specific lane rights different from a bicycle",1],
+["In California, if a traffic officer's directions conflict with a traffic signal at an intersection, a driver must:","Follow the traffic signal, since it takes precedence","Follow the officer's directions, since they take precedence over signs, signals, and even some traffic laws","Follow whichever instruction was given first that day","Stop and wait for the conflict to be resolved before proceeding",1],
+["California vehicle code requires a driver to use a turn signal:","Only for turns, not lane changes","For both turns and lane changes","Only when other vehicles are visible nearby","Only on multi-lane roads",1],
+["California considers driving in a manner that endangers the safety of persons or property, even below the posted speed limit, to potentially be a violation of:","No specific law, since the posted limit was not exceeded","The Basic Speed Law, since speed must always be safe for current conditions","Only local municipal code, not state law","Only the reckless driving statute, not the speed law",1],
+["California prohibits parking within a certain distance of a fire hydrant unless posted otherwise. That distance is:","5 feet","10 feet","15 feet","20 feet",2],
+["California requires drivers to stop for a stopped school bus with red lights flashing, and this requirement generally applies:","Only on two-lane roads","On any road, in both directions, unless separated by a physical median or barrier on a divided highway","Only where a crossing guard is also present","Only if the bus is parked at a marked bus stop",1],
+["In California, when you approach a green traffic light, your right to proceed is conditioned on:","No conditions, since green always means go regardless of the situation","The intersection being clear and it being safe, yielding to anyone still legally in the intersection","Having waited at least 2 seconds after the light changed","Oncoming traffic having stopped completely",1],
+["California vehicle code addresses distracted walking as well, but places the primary legal duty to avoid a collision with a pedestrian, even a distracted one, on:","The pedestrian at all times","The driver, who must exercise due care to avoid colliding with any pedestrian on the roadway","Whichever party has the green light","Neither party, since it's considered shared fault automatically",1],
+["California defines an unsafe lane change in part as changing lanes:","Any time a turn signal was used beforehand","Without first signaling and confirming the lane is clear via mirrors and a head check","On a freeway with more than three lanes","At a speed different from the posted limit",1],
+["California drivers approaching a work zone with a reduced posted speed limit and workers present must:","Maintain the previously posted highway speed since the reduction is only advisory","Slow to the posted work zone speed and stay alert for workers and equipment, even if no workers are currently visible","Only slow down if a worker is standing in the road","Speed through quickly to reduce their own time in the zone",1],
+["California considers black ice a hazard that is especially dangerous because it:","Only forms above 6,000 feet elevation","Often looks like a harmless wet patch and commonly forms on bridges and shaded areas first","Only affects rear tires","Is always visible as white frost, making it easy to spot",1],
+["California vehicle code generally prohibits driving in the direction of travel on the wrong side of a divided highway, and this is treated as a serious violation because:","It only risks a minor citation","Head-on collisions on divided highways are typically high speed and severe","It's only enforced during daylight hours","Divided highways don't have a marked direction of travel",1],
+["California's rule on a driver's obligation at a marked crosswalk without a signal, when a pedestrian is already in the crosswalk, requires the driver to:","Proceed if the pedestrian is more than halfway across","Stop and remain stopped until the pedestrian has safely crossed to the driver's half of the roadway or the full width, as required, and it's safe to proceed","Only stop if the pedestrian raises a hand","Sound the horn and continue slowly",1],
+["California treats a violation of the Basic Speed Law as applicable even in conditions where:","The posted limit was not exceeded, but the speed was unsafe for fog, rain, or heavy traffic","Only when the posted limit was clearly exceeded by a radar reading","Only on state highways, not local streets","Only during a declared state of emergency",0],
+["A California driver whose vehicle begins to hydroplane on a wet roadway should:","Brake firmly to regain traction quickly","Ease off the accelerator without braking, hold the steering wheel straight, and allow the vehicle to slow until traction returns","Steer sharply to find a dry section of pavement","Accelerate briefly to push through the water",1],
+["California requires that a vehicle towing a trailer maintain a following distance behind the vehicle ahead that is:","The same 3 seconds as any other vehicle, with no adjustment for the trailer","Greater than the standard following distance, since added weight increases stopping distance","Exactly double the speed limit in feet","Not specifically addressed by California law",1],
+["California considers it illegal to drive with any object placed so that it obstructs or reduces the driver's clear view through the windshield, such as:","A properly mounted dash cam positioned outside the sweep of the wipers","A large item hanging from the mirror that blocks a substantial portion of the driver's view","A California front license plate","A properly tinted windshield strip within the legal shade band",1],
+["California requires that when two vehicles approach a narrow bridge, tunnel, or mountain road from opposite directions with no signage, the vehicle facing a downgrade generally:","Has the right of way over the vehicle facing an upgrade","Should yield to the vehicle facing the upgrade, since it is more difficult for an uphill vehicle to stop and restart","Should proceed first regardless of grade","Must always back up to let the other vehicle pass",1]
+];
+
+const motoBank = [
+["California is one of the only states where lane splitting is explicitly legal. The California Highway Patrol's safety guidance suggests that when lane splitting, riders should travel no faster than approximately:","10 mph faster than surrounding traffic","20 mph faster than surrounding traffic, and typically not while traffic flows at 30 mph or faster","40 mph faster than surrounding traffic","There is no suggested speed differential",1],
+["Under California law, a motorcycle passenger must:","Ride behind the operator on a proper permanent seat, and if under a certain age, have feet that can reach the footrests","Sit in front of the operator whenever possible","Have no specific seating requirement under state law","Only ride if the motorcycle has a sidecar",0],
+["California requires all motorcycle riders and passengers to wear a helmet that meets:","No specific standard, any helmet is acceptable","U.S. DOT (FMVSS 218) safety standards","Only a standard set by the individual county","A helmet standard used only for closed-course racing",1],
+["California's motorcycle helmet law applies to:","Only the operator, not the passenger","Both the operator and any passenger, regardless of age","Only riders under 21","Only riders on freeways",1],
+["In California, when riding a motorcycle, the DMV Motorcycle Handbook advises that full protective gear, including eye protection, is:","Only legally required for the helmet; eye protection and other gear are optional","Legally required for the helmet, and eye protection is required unless the motorcycle has a windscreen; additional gear like jackets, gloves, and boots is strongly recommended though not all separately mandated","Entirely optional, including the helmet, for riders over 21","Required only when riding above 45 mph",1],
+["California permits motorcycles to use carpool (HOV) lanes:","Never, motorcycles are always prohibited from HOV lanes","Generally yes, motorcycles may use HOV lanes regardless of the number of occupants, unless a specific sign restricts it","Only if carrying a passenger","Only during off-peak hours",1],
+["Under California law, lane splitting safety guidance from the CHP recommends that riders avoid splitting lanes when overall traffic speed exceeds approximately:","10 mph","30 mph","55 mph","There is no recommended traffic speed threshold",1],
+["California requires that a motorcycle operator hold a valid Class M1 or M2 license. The M1 license generally covers:","Only mopeds and scooters under 150cc","Any two-wheeled motorcycle, and also allows operation of vehicles covered by an M2 license","Only motorcycles with a sidecar","Only motorcycles used for commercial delivery",1],
+["California's Class M2 license, as opposed to M1, covers:","All motorcycles including those over 150cc","Motorized bicycles and mopeds, or motorcycles under a certain engine displacement, generally under 150cc","Only three-wheeled motorcycles","Only electric motorcycles",1],
+["California law requires a motorcycle to have its headlight on:","Only from sunset to sunrise","At all times while operating on a highway, day or night, since modern motorcycles are equipped with lights that activate automatically or are required to be on","Only when visibility is below 1,000 feet","Only if registered after 2010",1],
+["In California, a motorcycle is entitled to the full use of a lane, meaning that another vehicle:","May share the lane side by side with a motorcycle at any time","Should not drive alongside a motorcycle within the same lane, since the motorcyclist is entitled to full lane width, apart from the legal practice of lane splitting itself","May only share a lane with a motorcycle on a freeway","Has no restriction regarding sharing a lane with a motorcycle",1],
+["California allows two motorcycles to ride side by side within a single lane. This practice is:","Illegal under all circumstances","Legal for no more than two motorcycles side by side in one lane","Illegal unless both riders are on the same insurance policy","Legal for any number of motorcycles side by side",1],
+["For a maximum effort stop on dry pavement, California's Motorcycle Handbook recommends:","Using the rear brake only, since the front can lock more easily","Applying both brakes together, with more pressure on the front brake, squeezing progressively","Using only the front brake and no rear brake at all","Coasting and using engine braking alone",1],
+["California's Motorcycle Handbook recommends riders position themselves within a lane in whichever of the three lane positions:","Best keeps them near the center line at all times","Offers the best combination of visibility to other traffic and a space cushion, which can vary based on the situation","Is closest to the shoulder for maximum safety margin","Is farthest from any parked cars regardless of visibility",1],
+["California requires that a motorcycle passenger under a certain age have a specific seating requirement. Generally, California law addresses this by requiring the passenger to:","Be old enough to reach the passenger footrests, since there's no specific minimum age but a functional requirement to safely sit and hold on","Be at least 12 years old with no exception","Be seated only if wearing a full face helmet","Only ride if they hold a valid motorcycle permit themselves",0],
+["Under California law, modifying a motorcycle's exhaust system to exceed the state's noise limit is:","Legal as long as the rider has a permit","Illegal, since California enforces a maximum decibel limit for motorcycle exhaust systems","Only illegal for motorcycles registered after 2020","Legal if performed by a licensed mechanic",1],
+["California's DMV Motorcycle Handbook describes countersteering (the main way to steer above about 10 to 15 mph) as:","Turning the handlebars in the same direction you want to go, similar to a car's steering wheel","Pressing forward on the handgrip on the side you want to go, which points the front wheel briefly the other way and leans the bike into the turn","Leaning your body only with no handlebar input at all","Applying the rear brake mid-turn to pivot the motorcycle",1],
+["When riding in California traffic, the Motorcycle Handbook recommends a minimum following distance in good conditions of:","1 second","At least 2 seconds, increased in poor conditions or behind larger vehicles","5 seconds regardless of conditions","There is no specific recommendation",1],
+["California requires that if you are lane splitting, you should generally avoid doing so:","Near freeway on ramps and off ramps, where traffic is merging or exiting and is less predictable","On any freeway at any time","Only during morning rush hour","Only if you're on a motorcycle under 500cc",0],
+["California's Motorcycle Handbook advises that a rider approaching an intersection with a green light should:","Proceed at full speed, since a green light guarantees a clear path","Continue scanning cross traffic and cover the brake, since other drivers may fail to see the motorcycle or run the light","Close the throttle completely and coast through to be cautious","Move to the outer edge of the lane to be less of a target",1],
+["California considers riding a motorcycle while impaired by alcohol to be:","Governed by the same 0.08% BAC limit as driving a car, with the added danger that riding requires more active balance and coordination","Governed by a lower BAC limit of 0.04% for all motorcyclists","Not covered by DUI law since motorcycles are considered different from cars","Only enforced if a crash occurs",0],
+["California's handbook on group riding recommends a staggered formation, with the following distance to the rider directly ahead in the same track position being at least:","1 second","2 seconds","4 seconds","There's no specific recommended distance",1],
+["Under California law, a motorcycle operator's field of view can be legally obstructed by a windscreen only if:","It meets applicable safety standards and does not unreasonably restrict the rider's view or require impermissible modifications","No windscreen is permitted on a street legal motorcycle in California","It is tinted more than 70 percent","It exceeds the height of the handlebars",0],
+["California treats a motorcycle's turn signals as required equipment for:","Only motorcycles manufactured after 2000","Any motorcycle operated on a public roadway, and signals must be canceled properly after a turn or lane change","Only motorcycles with an engine over 150cc","Only motorcycles used on freeways",1],
+["California DMV guidance states that when crossing wet railroad tracks that run diagonally to your lane, you should:","Hold your current angle and speed without adjustment","Adjust your path to cross the rails as close to a 90 degree angle as safely possible, slowing before the tracks rather than while on them","Cross at the shallowest possible angle to reduce the bump","Brake firmly while your wheels are on the rails",1],
+["California requires a motorcycle permit holder (before obtaining a full M1 or M2 license) to generally avoid:","Riding during daylight hours","Riding with any passenger, and riding on a freeway, until they hold a full license","Riding on any public street at all","Riding with a helmet, since permit holders are exempt",1],
+["California's Motorcycle Handbook explains that target fixation is dangerous mainly because:","It improves a rider's focus on the correct path through a hazard","Staring at an obstacle tends to unconsciously steer the motorcycle toward it rather than the intended safe path","It only affects new riders on their first ride","It has no real effect on steering input",1],
+["Under California law, a motorcycle operator under 21 must have completed a California Highway Patrol approved motorcycle training course before obtaining a license. This requirement:","Applies to all new motorcycle license applicants regardless of age","Is specifically required for applicants under 21 seeking an original motorcycle license","Only applies to riders seeking an M2 license","Only applies to out of state license transfers",1],
+["California's Motorcycle Handbook states that a rider should scan the roadway and check mirrors approximately:","Once every mile","Every 5 to 8 seconds, more frequently in heavy traffic","Only when changing lanes","Once every few minutes",1],
+["In California, a motorcycle's blind spots ('no zones') created by nearby large trucks are especially dangerous because:","Trucks always signal well before any lane change","The truck driver may have limited or no visibility of a smaller vehicle like a motorcycle nearby","Motorcycles create larger blind spots for the truck than a car would","Trucks are legally required to yield to motorcycles at all times",1],
+["California requires that motorcycle passengers be provided with:","No specific equipment, only a place to sit","Footrests and either a separate seat or a secure section of the operator's seat designed to carry a passenger","A helmet only if the passenger requests one","A separate set of handlebars",1],
+["California's DMV Motorcycle Handbook recommends that during a turn, a rider should look:","Down at the front wheel to place it precisely","Through the turn toward the intended path or exit point, since the eyes help guide the motorcycle's line","At the edge of the lane closest to the curb","At the mirror to check for following traffic",1],
+["California law addresses motorcycle equipment requirements, including that handlebars may not be positioned higher than the operator's shoulders when seated. This rule exists mainly to:","Improve the motorcycle's top speed","Preserve the rider's ability to control the motorcycle safely and maintain visibility and balance","Reduce wind resistance at highway speed","Comply with a noise reduction requirement",1],
+["California's guidance on riding through a work zone with loose gravel recommends:","Maintaining normal cruising speed to avoid drawing attention","Reducing speed, increasing following distance, and staying alert for loose material and uneven pavement","Using the opportunity to practice tighter cornering lines","Riding only on the marked center line through the zone",1],
+["Under California law, if a motorcycle's mirror is missing or improperly adjusted, the rider is:","Not in violation as long as they can turn their head to check","In violation of California's equipment requirements, since a properly functioning mirror is required equipment","Only in violation if riding on a freeway","Only in violation if carrying a passenger",1],
+["California's Motorcycle Handbook recommends that when passing through an intersection where a vehicle is waiting to turn left across your path, a rider should:","Assume the driver has seen them and maintain speed","Cover the brake, watch the vehicle's wheels for signs of movement, and be ready to brake or evade, since drivers often misjudge a motorcycle's speed and distance","Speed up to clear the intersection before the vehicle can turn","Avoid eye contact so it isn't misread as yielding",1],
+["California considers it a violation to operate a motorcycle with a passenger if the motorcycle:","Is not specifically designed or equipped to carry a passenger, lacking a proper seat and footrests for that purpose","Was manufactured before 1990","Has fewer than two mirrors","Has an engine smaller than 500cc",0],
+["California's rule for right of way at a four way stop applies to motorcycles the same as any other vehicle: if two vehicles arrive at the same time from perpendicular roads, the right of way goes to:","The vehicle on the left","The vehicle on the right","Whichever vehicle is a motorcycle, out of caution","Whichever vehicle is larger",1],
+["California DMV guidance recommends that new motorcycle riders delay carrying a passenger, riding on freeways, or riding in bad weather until they:","Have owned the motorcycle for at least one year, regardless of practice","Have built basic control skills and confidence, often through practice in a controlled area like an empty lot","Have upgraded to a larger displacement motorcycle","Have installed aftermarket safety equipment",1],
+["California treats lane splitting differently from simply riding at the edge of a single lane; splitting specifically refers to:","Riding between two lanes of traffic moving in the same direction, whether stopped or slow moving","Riding on the shoulder of a freeway","Switching lanes rapidly in heavy traffic","Riding two abreast with another motorcycle",0],
+["Under California law, motorcycle equipment inspections check items including tires, lights, horn, mirrors, and brakes, and operating with a clearly defective item, such as a nonfunctioning brake light, can result in:","No penalty, since motorcycles are exempt from equipment citations","A citation for an equipment violation","Only a warning on the first offense statewide","Suspension of the vehicle's registration automatically",1],
+["California requires a motorcycle operator to have a valid license classification matching their vehicle. Riding a motorcycle above 150cc with only an M2 license is:","Permitted as long as the rider has a regular Class C license too","Not permitted, since an M1 license is required for motorcycles above the M2 displacement limit","Permitted only on weekends","Permitted if the rider is over 25",1],
+["California's guidance on riding in a group recommends that riders in a staggered formation compress into single file when:","Riding a long, straight stretch of open highway","Approaching curves, intersections, or situations requiring the full lane width for each rider's own line and escape route","Stopped at a red light","Cruising well below the speed limit",1],
+["Under California law, if you're riding a motorcycle and a sudden hazard causes you to swerve, the recommended technique is to:","Brake hard while simultaneously turning the handlebars sharply","Use a quick countersteering input to swerve around the hazard, then stabilize the motorcycle before braking further if needed","Close your eyes and commit to a straight line through the hazard","Always lay the motorcycle down rather than attempt to swerve",1],
+["California's DMV Motorcycle Handbook notes that a motorcycle's smaller visual profile compared to a car contributes to crashes mainly because:","It makes the motorcycle harder to control at low speed","Other drivers often have difficulty judging a motorcycle's speed and distance, sometimes failing to see it at all","It increases the motorcycle's sensitivity to crosswinds specifically","It has no real bearing on how other drivers perceive it",1],
+["California requires that before obtaining a motorcycle license, an applicant must pass both a written knowledge test and:","A vision test only, with no riding skills test required","An on cycle skills test, or successful completion of an approved motorcycle training course that waives the skills test","A separate test only for riders under 21","No additional test if the applicant already holds a Class C license",1],
+["California's rule for motorcycles regarding riding on the shoulder of a freeway is that it is:","Always legal, since shoulders are considered an extra lane for motorcycles","Not legal; shoulders are generally reserved for emergencies and are not to be used as a travel lane, including while lane splitting","Legal only during heavy congestion","Legal only for motorcycles under 250cc",1],
+["California's Motorcycle Handbook explains engine braking as:","Using the front brake exclusively at high speed to slow the bike","The deceleration produced by closing the throttle and/or downshifting, using engine compression to help slow the motorcycle smoothly","A failure mode where the engine locks the rear wheel","A technique usable only on motorcycles without a clutch",1],
+["California considers a motorcycle passenger's helmet, footrest use, and proper seating to be the operator's responsibility in the sense that:","The operator faces no responsibility once the passenger has boarded","The operator can be cited for allowing an improperly equipped or seated passenger to ride, since safety equipment and proper seating are legal requirements","Only the passenger can be cited, never the operator","Passenger equipment is entirely optional under California law",1],
+["California's guidance for riding near large vehicles states that wind gusts created when passing or being passed by a truck or bus can:","Be safely ignored by an experienced rider","Push the motorcycle off its line, so a rider should anticipate the gust and make small, smooth corrective inputs","Only affect motorcycles with full fairings","Only occur above 70 mph",1],
+["California requires that all vehicles, including motorcycles, yield to a pedestrian who is blind or has low vision and is using a white cane or guide dog:","Only in a marked crosswalk","At any location where the pedestrian is crossing or about to cross, since failing to yield is a specific violation","Only during daylight hours","Only if a crossing guard is present",1],
+["California's Motorcycle Handbook recommends that riders wear bright or reflective gear mainly because it:","Improves aerodynamic performance at highway speed","Increases the rider's visibility to other drivers across varied lighting and weather conditions","Reduces wind noise inside the helmet","Improves fuel economy",1],
+["California DMV guidance for a sudden rear tire blowout while riding recommends:","Hard front braking to compensate for rear instability","A firm, steady grip on the handlebars, easing off the throttle smoothly, and slowing gradually before coming to a stop","Immediate hard application of both brakes","Accelerating briefly to maintain stability through the wobble",1],
+["California allows motorcyclists to use the diamond (carpool) lane. This is notable because in California, unlike some states, motorcycles:","Are prohibited from carpool lanes regardless of occupancy","May generally use carpool lanes regardless of the number of riders, since motorcycles are exempt from the minimum occupancy requirement","May only use carpool lanes with a valid Clean Air decal","May only use carpool lanes during specific hours",1],
+["California's rule on a motorcycle operating with a defective headlight during daytime hours is:","Not a violation, since headlights are only required at night","A violation, since California requires the headlight to be on and functioning at all times while operating on a highway","Only a violation if riding after sunset","Only a violation for motorcycles registered outside California",1],
+["California's Motorcycle Handbook states that riding a motorcycle you're unfamiliar with (rented or borrowed) for the first time adds risk mainly because:","All motorcycles handle essentially the same regardless of make or model","Differences in brake feel, power delivery, and ergonomics can catch a rider off guard, so practicing in a controlled area first is recommended","Unfamiliar motorcycles are inherently less mechanically reliable","Insurance never covers an unfamiliar motorcycle in California",1],
+["California prohibits a motorcycle operator from carrying a passenger in a manner that interferes with:","The operator's ability to see, or their control of the handlebars and footrests","The passenger's ability to see the road ahead","The motorcycle's fuel efficiency","The motorcycle's resale value",0],
+["Under California law, the CHP's official lane splitting guidelines were the first of their kind in the nation and specifically caution against splitting lanes:","On surface streets only, since it's restricted to freeways","Near freeway exits and entrances, in the far left or right lane adjacent to concrete barriers or the shoulder, or when traffic is moving at higher speeds","Only during weekday rush hour commutes","On any road with fewer than four total lanes",1],
+["California's Motorcycle Handbook advises that mid-curve braking, applying the brakes while leaned over, should generally be avoided because it:","Has no real effect on available traction","Uses up traction the tires need for cornering, raising the risk of a slide, so most braking should happen before the curve","Overheats the front brake specifically","Is prohibited by California law on public roads",1],
+["California's handbook recommends that worn or underinflated tires are especially dangerous on a motorcycle because:","They mainly affect ride comfort, not control","With only two small contact patches, reduced tire performance directly cuts into cornering and braking grip","They affect fuel economy more than handling","They only matter above highway speeds",1],
+["Riding in a vehicle's blind spot is hazardous mainly because:","It increases turbulence from the vehicle's wake","The driver may not know you're there and could change lanes into you","It puts you too close to brake in time if they stop","It blocks your own forward view of traffic",1],
+["The 'slow, look, lean, roll' approach to a curve means a rider should:","Brake through the entire curve while watching the pavement directly ahead","Set entry speed before the curve, look through it toward the exit, lean in, and roll on the throttle smoothly through and out","Coast in neutral to keep the bike settled","Trail the front brake to the apex, then accelerate hard",1],
+["If a motorcycle develops a high speed handlebar wobble, the recommended response is to:","Accelerate firmly to push through it","Hold the bars firmly without fighting them excessively, ease off the throttle gradually, avoid hard braking, then pull over to inspect the bike","Brake hard with the front to settle the front end","Brake hard with the rear brake only",1],
+["Single vehicle motorcycle crashes are most often the result of:","Riding well under the prevailing traffic speed","Entering a curve too fast for the rider's skill level or the conditions, leading to loss of control","Over maintaining the motorcycle between rides","Wearing gear that restricts movement",1],
+["The engine cut off switch on a motorcycle exists so a rider can:","Adjust idle speed during a cold start","Shut the engine off quickly in an emergency without taking a hand off the controls to reach the ignition key","Disengage the drivetrain without using the clutch","Cancel a turn signal without a separate switch",1],
+["Riding while impaired by alcohol is generally considered more dangerous on a motorcycle than in a car mainly because:","Lane keeping is the primary task in both cases equally","Riding requires continuous active balance and fine coordination, which alcohol degrades quickly","A motorcycle is more stable than a car at low speed","There is no meaningful difference between the two",1],
+["A particular hazard of riding in a tightly bunched group is that riders packed too close together:","Reduce the reaction time and stopping room they would have if the leader brakes hard","Make the group less visible to surrounding traffic","Are required to use hand signals more often","Cause additional wind buffeting for trailing riders",0],
+["If a small animal suddenly darts into your path, the generally recommended response is to:","Swerve immediately toward the nearest open space regardless of traffic","Brake as hard as traction allows in as straight a line as possible, swerving only if a collision is otherwise unavoidable and a clear path exists","Accelerate to get past before it reacts","Hold your line and let the animal move out of the way",1],
+["Running the motorcycle headlight at all times, even in daylight, helps mainly by:","Keeping the charging system exercised","Making the bike more conspicuous to drivers who often struggle to judge a small vehicle's speed and distance","Reducing glare from oncoming traffic","Improving the rider's own forward vision",1],
+["If a vehicle behind you at a stop appears unlikely to stop in time, an experienced rider would typically:","Stay still and trust the driver to brake in time","Cover the front brake, watch the mirror, and look for an escape path to the side or front","Rev the engine to draw attention","Shift to neutral and prepare to step off the bike",1],
+["The SEE strategy taught in California rider courses stands for:","Scan, Estimate, Execute, a way to judge entry speed for curves","Search, Evaluate, Execute, an ongoing process of spotting hazards, judging the risk they pose, and acting appropriately","Stop, Examine, Engage, a pre-ride inspection routine","See, Escape, Evade, a crash avoidance drill",1],
+["Painted lane markings, steel plates, and manhole covers pose a hazard to motorcyclists mainly because they:","Are illegal surfaces to ride across in California","Offer significantly less grip than asphalt, especially when wet, so riders should reduce lean angle and smooth their inputs when crossing them","Damage the tires on contact","Only affect motorcycles with already worn tires",1],
+["A correctly fitted motorcycle helmet should:","Move noticeably when you shake your head side to side","Fit snugly with minimal movement, sit level on the head rather than tilted back, and have a securely fastened chin strap","Be loose enough to wear a winter hat underneath in any season","Rest above the brow line for a clearer field of view",1],
+["Night riding raises risk mainly because:","Traffic volume is always heavier after dark","Both the rider's ability to see hazards and other drivers' ability to see the rider are reduced at the same time","Riders are legally prohibited from using their high beam after dark","Engines lose meaningful power in cooler night air",1],
+["When a tailgater is following too closely behind a motorcycle, the recommended response is to:","Brake sharply to make the point clearly","Open up space to the vehicle ahead and, when it's safe, let the tailgater pass rather than escalating","Accelerate hard to drop them entirely","Drift side to side within the lane to discourage them",1],
+["On loose gravel or sand, a rider should:","Brake hard early and lean through turns as on dry pavement","Slow gradually before entering the loose surface, keep the motorcycle as upright as possible, avoid sudden inputs, and look toward the intended path","Accelerate to power across the loose section quickly","Stand on the pegs and lean aggressively into available turns",1],
+["Left turning vehicles colliding with oncoming motorcycles is a frequently cited crash pattern mainly because:","Motorcycles are legally required to yield in every left turn scenario","Drivers often fail to detect a motorcycle in their field of view or misjudge its speed and distance due to its small profile","Such collisions only occur when the motorcycle's signal is malfunctioning","Left turns become illegal whenever a motorcycle is nearby",1],
+["Approaching a curve with limited sight distance around a blind corner, the appropriate adjustment is to:","Increase speed to clear the blind section faster","Reduce speed before entering, position for the best available sight distance, and be prepared to adjust your line and speed as more of the curve becomes visible","Maintain a constant high speed and trust the road's design","Cross into the opposing lane briefly for a better view",1],
+["ATGATT, meaning All The Gear All The Time, reflects the principle that protective gear should be worn:","Only on long distance rides above a certain mileage","On every ride, including short trips, since crash risk isn't limited to long or high speed rides","Only in cold weather for warmth","Only when required for track riding, not street riding",1],
+["Near large trucks or buses, the key hazard for a motorcyclist beyond their blind spots is:","Their tendency to signal well in advance of every maneuver","Their wide turning radius and the wind turbulence they create, which can destabilize a nearby motorcycle","Their typically slower highway speed compared to motorcycles","Their shorter stopping distance compared to motorcycles",1],
+["Smooth clutch and throttle control on a motorcycle is most critical during:","Steady highway cruising in a straight line","Slow speed maneuvers such as U turns, parking lot navigation, and stop and go traffic, where abrupt inputs are more likely to upset balance","Coasting downhill with the clutch fully disengaged","Riding two abreast with another rider on an open road",1],
+["Chain or belt tension outside a motorcycle manufacturer's specification can lead to:","Slightly improved fuel economy with no other effect","Premature wear or, in severe cases, a sudden loss of power to the rear wheel while riding","No measurable difference in the bike's behavior","A modest increase in top speed",1],
+["On a long distance ride, fatigue is best managed by:","Pushing through to the destination without stopping to preserve momentum","Taking regular breaks to rest and hydrate, since fatigue significantly impairs the balance and reaction time riding demands","Increasing speed to reduce total time on the road","Relying on loud music alone to stay alert",1],
+["Cargo carried on a motorcycle should be:","Tied loosely so it can be accessed quickly at a stop","Carried low and centered on the motorcycle, evenly distributed, and secured so it cannot shift, contact moving parts, or block lights","Mounted as high as possible for better weight transfer","Loaded mostly toward one side to aid cornering on that side",1],
+["Encountering an unavoidable pothole on the road, the recommended technique is to:","Swerve sharply at the last possible moment regardless of surrounding traffic","Slow down if possible, rise slightly off the seat to absorb the impact with your legs, and cross it as squarely and straight as possible","Accelerate just before impact to lighten the front wheel","Brake hard with the front brake directly over the pothole",1],
+["The most important consideration when choosing motorcycle riding gloves is:","Matching the color scheme of the motorcycle","A combination of abrasion resistance, grip, and enough dexterity to fully control the clutch, brake, and throttle","Choosing the loosest possible fit for comfort","Avoiding any gloves with added knuckle protection",1],
+["An inexperienced passenger adds risk to a ride mainly because they may:","Improve the motorcycle's stability simply by adding weight","Shift their body weight unexpectedly or fail to lean with the rider through turns, disrupting the motorcycle's balance","Have no measurable effect on handling regardless of experience","Make the motorcycle noticeably easier to control at low speed",1],
+["Riding at dawn or dusk, when lighting conditions are transitional, calls for:","No adjustment from ordinary daytime riding habits","Additional reflective or high visibility gear and confirming the headlight is on, since contrast and visibility are typically reduced during that period","Removing the headlight to conserve the battery","Wearing darker clothing to stand out against a bright sky",1],
+["Motorcycle tire pressure should be checked:","Once a year during a scheduled service","Before long rides and at least monthly, since incorrect pressure significantly affects handling, braking, and tire wear","Only after a visible puncture is discovered","Only if the motorcycle has been sitting unused for more than a year",1],
+["A tight, slow speed U turn on a motorcycle relies mainly on:","High entry speed combined with firm front braking through the turn","Steady, controlled throttle combined with light rear brake use, looking through the turn toward the exit point","Avoiding the rear brake entirely throughout the maneuver","Staring down at the front wheel to place it precisely",1],
+["In sustained crosswinds, a rider should:","Hold a single fixed lean angle and ignore changes in wind force","Continuously adjust lean angle and steering input to the changing wind force, reducing speed if the gusts become severe","Increase speed to spend less time exposed to the wind","Coast in neutral to reduce the engine's influence on stability",1],
+["A mirror that is poorly aimed on a motorcycle primarily increases risk by:","Slightly distorting the apparent distance of vehicles behind","Enlarging the rider's blind spots, meaning a vehicle can be present without the rider being aware even during a mirror check","Reflecting headlight glare into the rider's eyes at night","Mattering only during highway speed riding",1],
+["On unfamiliar roads, a prudent rider will generally:","Ride at the same pace they would on roads they already know well","Ride somewhat more cautiously, anticipating unexpected curves, surface changes, or hazards a local rider might already expect","Follow closely behind another vehicle to learn the correct line","Keep their eyes fixed forward and skip mirror checks to focus ahead",1],
+["Carrying a passenger meaningfully affects a motorcycle's stopping distance because the added weight:","Has essentially no measurable effect on braking performance","Lengthens the overall stopping distance, so the rider should allow more following distance and brake earlier and more smoothly","Actually shortens stopping distance through added rear tire grip","Only matters when traveling above highway speeds",1],
+["The conspicuity benefit of bright or reflective riding gear comes mainly from:","Better aerodynamic performance at highway speed","Making the rider more visible to others across varied lighting and weather conditions, helping offset the motorcycle's small visual profile","Quieter airflow noise inside the helmet","Improved fuel economy from reduced aerodynamic drag",1],
+["If a motorcycle's drive chain or belt suddenly fails while riding, meaning the rear wheel loses power, the rider should:","Accelerate hard in an attempt to regain drive","Bring the motorcycle smoothly to a controlled stop using the brakes, since the rear wheel will no longer receive power, avoiding sudden inputs","Continue riding at reduced throttle all the way to the nearest repair shop","Shift into neutral and attempt to coast at highway speed to the next exit",1],
+["Head checks, physically turning to look over the shoulder, remain necessary in addition to mirror checks because:","Mirrors provide complete, gap free coverage of all areas around the motorcycle","Mirrors have inherent blind spots that a head check helps cover, which is particularly important before lane changes or merges","Head checks are essentially a formality with no real safety benefit","Motorcycle mirrors are specifically unreliable, unlike a car's mirrors",1],
+["Accelerating too aggressively while still leaned over exiting a curve risks:","No real consequence, provided the throttle input is smooth regardless of lean angle","Overwhelming the rear tire's available traction at that lean angle, since available grip must be shared between cornering and acceleration forces","Only being a concern on wet pavement, never on dry roads","Improving stability by settling the rear suspension",1],
+["When a passing truck's wind blast suddenly pushes a motorcycle sideways, the best response is to:","Release the handlebars momentarily so the bike can self correct","Maintain a firm but relaxed grip, anticipate the gust where possible, and make small, smooth corrective steering inputs","Accelerate hard immediately to power through the disturbance","Brake hard the instant the gust is felt",1],
+["California's Motorcycle Handbook notes that keeping the headlight on at all times, including in bright daylight, mainly helps by:","Slightly improving fuel economy over time","Increasing conspicuity, so drivers are less likely to overlook the motorcycle's small visual profile among other traffic","Satisfying a purely cosmetic legal formality","Mattering only in areas that regularly see fog",1]
+];
+
+// ---------- STATE ----------
+let state = { type:null, bank:[], questions:[], current:0, answers:[], selected:null, label:'' };
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function show(id){
+  ['screen-type','screen-format','screen-quiz','screen-result'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+}
+
+function chooseType(type){
+  state.type = type;
+  state.bank = type==='car' ? carBank : motoBank;
+  document.getElementById('formatBadge').textContent = type==='car' ? '🚗 Car Test' : '🏍️ Motorcycle Test';
+  document.getElementById('setPicker').classList.add('hidden');
+  show('screen-format');
+}
+
+function showSets(){
+  const grid = document.getElementById('setGrid');
+  grid.innerHTML = '';
+  const totalSets = Math.ceil(state.bank.length / 20);
+  for(let i=0;i<totalSets;i++){
+    const startQ = i*20+1, endQ = Math.min((i+1)*20, state.bank.length);
+    const btn = document.createElement('button');
+    btn.className = 'set-btn';
+    btn.innerHTML = `Set ${i+1}<small>Q${startQ}–${endQ}</small>`;
+    btn.onclick = ()=> startSequential(i);
+    grid.appendChild(btn);
+  }
+  document.getElementById('setPicker').classList.remove('hidden');
+}
+
+function buildQuestions(rawList){
+  return rawList.map(q=>{
+    const opts = q.slice(1,5).map((text,i)=>({text, correct:i===q[5]}));
+    const shuffled = shuffle(opts);
+    return { question:q[0], options:shuffled };
+  });
+}
+
+function startRandom(){
+  const picked = shuffle(state.bank).slice(0,20);
+  state.questions = buildQuestions(picked);
+  state.label = (state.type==='car' ? '🚗 Car Test' : '🏍️ Motorcycle Test') + ' · 🎲 Random';
+  state.lastStart = ()=>startRandom();
+  beginQuiz();
+}
+
+function startSequential(setIndex){
+  const start = setIndex*20;
+  const slice = state.bank.slice(start, start+20);
+  state.questions = buildQuestions(slice);
+  state.label = (state.type==='car' ? '🚗 Car Test' : '🏍️ Motorcycle Test') + ` · 📑 Set ${setIndex+1} (Q${start+1}–${start+slice.length})`;
+  state.lastStart = ()=>startSequential(setIndex);
+  beginQuiz();
+}
+
+function beginQuiz(){
+  state.current = 0;
+  state.answers = [];
+  state.selected = null;
+  show('screen-quiz');
+  document.getElementById('modeBadge').textContent = state.label;
+  renderQuestion();
+}
+
+function retakeSame(){ state.lastStart(); }
+function goHome(){ show('screen-type'); }
+
+function renderQuestion(){
+  const q = state.questions[state.current];
+  document.getElementById('qnum').textContent = `Question ${state.current+1} of ${state.questions.length}`;
+  document.getElementById('progressBar').style.width = `${(state.current/state.questions.length)*100}%`;
+  document.getElementById('qtext').textContent = `❓ ${q.question}`;
+  const optionsDiv = document.getElementById('options');
+  optionsDiv.innerHTML = '';
+  state.selected = null;
+  hideQuitConfirm();
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('nextBtn').textContent = state.current === state.questions.length-1 ? '🏁 Finish' : 'Next ➡️';
+
+  q.options.forEach((opt, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt.text;
+    btn.onclick = ()=> selectOption(idx);
+    optionsDiv.appendChild(btn);
+  });
+}
+
+function selectOption(idx){
+  if(state.selected !== null) return;
+  state.selected = idx;
+  const q = state.questions[state.current];
+  const buttons = document.querySelectorAll('#options .option');
+  buttons.forEach((btn,i)=>{
+    if(q.options[i].correct){ btn.classList.add('correct'); }
+    if(i===idx && !q.options[i].correct){ btn.classList.add('incorrect'); }
+    if(i===idx){ btn.classList.add('selected'); }
+  });
+  state.answers.push({
+    question: q.question,
+    chosen: q.options[idx].text,
+    correctText: q.options.find(o=>o.correct).text,
+    isCorrect: q.options[idx].correct
+  });
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion(){
+  if(state.current < state.questions.length-1){
+    state.current++;
+    renderQuestion();
+  } else {
+    finishTest();
+  }
+}
+
+function showQuitConfirm(){
+  document.getElementById('nav-normal').classList.add('hidden');
+  document.getElementById('nav-confirm').classList.remove('hidden');
+}
+function hideQuitConfirm(){
+  document.getElementById('nav-confirm').classList.add('hidden');
+  document.getElementById('nav-normal').classList.remove('hidden');
+}
+function confirmQuit(){ show('screen-format'); }
+
+function finishTest(){
+  const total = state.questions.length;
+  const correct = state.answers.filter(a=>a.isCorrect).length;
+  const pct = Math.round((correct/total)*100);
+  const passed = pct >= 80;
+
+  document.getElementById('progressBar').style.width = '100%';
+  show('screen-result');
+  document.getElementById('resultIcon').textContent = passed ? '🎉' : '😬';
+  document.getElementById('resultTitle').innerHTML = passed
+    ? '<span class="pass">PASSED!</span>'
+    : '<span class="fail">NOT YET , KEEP STUDYING</span>';
+  document.getElementById('resultSub').textContent = passed
+    ? `Nice work! You're driving toward that ${state.type==='car'?'🚗 license':'🏍️ endorsement'}.`
+    : `You need 80% to pass. Review the missed questions below and try again. 💪`;
+  document.getElementById('scoreBox').innerHTML = `<span class="${passed?'pass':'fail'}">${correct}/${total} (${pct}%)</span>`;
+
+  const reviewDiv = document.getElementById('reviewList');
+  reviewDiv.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">📋 Review</div>';
+  state.answers.forEach((a,i)=>{
+    const item = document.createElement('div');
+    item.className = 'review-item';
+    item.innerHTML = `
+      <div class="qtext">${i+1}. ${a.question}</div>
+      <div class="${a.isCorrect?'tag-correct':'tag-wrong'}">${a.isCorrect?'✅ Correct':'❌ Your answer: '+a.chosen}</div>
+      ${a.isCorrect?'':'<div style="color:var(--good)">✔️ Correct answer: '+a.correctText+'</div>'}
+    `;
+    reviewDiv.appendChild(item);
+  });
+}
+</script>
+</body>
+</html>
